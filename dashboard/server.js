@@ -4,35 +4,47 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const app = express();
-const port = process.env.PORT || 8080;
-
+const PORT = process.env.PORT || 8080;
 const MONGODB_URL = process.env.MONGODB_URL;
 
-cors({
-  origin: process.env.LANDING_PAGE_URL,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content Type', 'Authorization'],
-  //   credentials: true,
-});
-
-app.use(cors());
+// Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: process.env.LANDING_PAGE_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    // credentials: true,
+  })
+);
 
 const connectToMongoDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    await mongoose.connect(MONGODB_URL);
+    console.log('✅ Connected to MongoDB');
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
     });
-    console.log('Connected to MongoDB');
   } catch (error) {
-    console.error('Error connecting to MongoDB', error);
+    console.error('❌ Error connecting to MongoDB:', error);
+    process.exit(1);
   }
 };
-
 connectToMongoDB();
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Default route (Check if server is running)
+app.get('/', (req, res) => {
+  res.send('✅ Backend is running!');
+});
+
+// Test API route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
+
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
 });
